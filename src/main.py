@@ -20,18 +20,27 @@ def main():
     else:
         device = 'cpu'
 
-    dataset_args = (config['task'], config['dataset'], config['dataset_path'],
-                    'train', config['num_layers'], config['self_loop'],
-                    config['normalize_adj'], config['transductive'])
+    dataset_args = (config['task'],
+                    config['dataset'],
+                    config['dataset_path'],
+                    'train',
+                    config['num_layers'],
+                    config['self_loop'],
+                    config['normalize_adj'],
+                    config['transductive'])
     dataset = utils.get_dataset(dataset_args)
     loader = DataLoader(dataset=dataset, batch_size=config['batch_size'],
                         shuffle=True, collate_fn=dataset.collate_wrapper)
     input_dim, output_dim = dataset.get_dims()
 
     agg_class = utils.get_agg_class(config['agg_class'])
-    model = models.GraphSAGE(input_dim, config['hidden_dims'], output_dim, 
-                             agg_class, config['dropout'],
-                             config['num_samples'], device)
+    model = models.GraphSAGE(input_dim,
+                             config['hidden_dims'],
+                             output_dim, 
+                             agg_class,
+                             config['dropout'],
+                             config['num_samples'],
+                             device)
     model.to(device)
 
     if not config['load']:
