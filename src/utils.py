@@ -2,6 +2,7 @@ import argparse
 import importlib
 import json
 import sys
+import os
 
 import torch
 import torch.nn as nn
@@ -146,7 +147,7 @@ def parse_args():
     args = parser.parse_args()
     config = vars(args)
     if config['json']:
-        with open(config['json']) as f:
+        with open(os.path.join(os.getcwd(), 'src', config['json'])) as f:
             json_dict = json.load(f)
             config.update(json_dict)
 
