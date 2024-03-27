@@ -1,7 +1,7 @@
 {
     "print_every" : 3,
     "dataset" : "Cora",
-    "dataset_path" : "/Users/raunak/Documents/Datasets/Cora",
+    "dataset_path" : "src/datasets/Cora",
     "mode" : "train",
     "task" : "node_classification",
     "agg_class" : "MeanAggregator",
