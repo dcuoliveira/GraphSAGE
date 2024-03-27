@@ -82,11 +82,20 @@ class GraphSAGE(nn.Module):
             mapping = mappings[k]
             init_mapped_nodes = np.array([mappings[0][v] for v in nodes], dtype=np.int64)
             cur_rows = rows[init_mapped_nodes]
-            aggregate = self.aggregators[k](out, nodes, mapping, cur_rows,
+
+            # aggregate - line 11 of Algorithm 2 in the paper
+            aggregate = self.aggregators[k](out,
+                                            nodes,
+                                            mapping,
+                                            cur_rows,
                                             self.num_samples)
             cur_mapped_nodes = np.array([mapping[v] for v in nodes], dtype=np.int64)
+
+            # concat - line 12 of Algorithm 2 in the paper
             out = torch.cat((out[cur_mapped_nodes, :], aggregate), dim=1)
             out = self.fcs[k](out)
+
+            # normalize - line 13 of Algorithm 2 in the paper
             if k+1 < self.num_layers:
                 out = self.relu(out)
                 out = self.bns[k](out)
