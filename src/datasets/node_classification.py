@@ -7,8 +7,13 @@ from torch.utils.data import DataLoader, Dataset
 
 class Cora(Dataset):
 
-    def __init__(self, path, mode, num_layers,
-                 self_loop=False, normalize_adj=False, transductive=False):
+    def __init__(self,
+                 path,
+                 mode,
+                 num_layers,
+                 self_loop=False,
+                 normalize_adj=False,
+                 transductive=False):
         """
         Parameters
         ----------
@@ -55,15 +60,28 @@ class Cora(Dataset):
                 idx = np.hstack((self.idx['train'], self.idx['val']))
             elif mode == 'test':
                 idx = np.hstack((self.idx['train'], self.idx['test']))
+
+        # node features (X) and target labels (y)
         features, labels = content[idx, 1:-1].astype(np.float32), content[idx, -1]
         d = {j : i for (i,j) in enumerate(sorted(set(labels)))}
         labels = np.array([d[l] for l in labels])
 
+        # get article codes as vertices
         vertices = np.array(content[idx, 0], dtype=np.int64)
+
+        # map article codes to vertices numbers
         d = {j : i for (i,j) in enumerate(vertices)}
+
+        # get edges from article codes
         edges = np.array([e for e in citations if e[0] in d.keys() and e[1] in d.keys()])
+
+        # map edges on article codes to edges on vertices
         edges = np.array([d[v] for v in edges.flatten()]).reshape(edges.shape)
+
+        # number of nodes and edges
         n, m = labels.shape[0], edges.shape[0]
+
+        # adjacency matrix
         u, v = edges[:, 0], edges[:, 1]
         adj = sp.coo_matrix((np.ones(m), (u, v)),
                             shape=(n, n),
@@ -126,9 +144,17 @@ class Cora(Dataset):
         idx = [node_layers[-1][0] for node_layers in [sample[1] for sample in batch]]
 
         node_layers, mappings = self._form_computation_graph(idx)
+
+        # get rows of the adjacency matrix associated with the nodes on the last leaf (first node_layers) of the computation graph
         rows = self.adj.rows[node_layers[0]]
+
+        # get features associated with the nodes on the last leaf (0th node_layers) of the computation graph
         features = self.features[node_layers[0], :]
+
+        # get labels associated with the nodes on the first leaf (-1th node_layers) of the computation graph
         labels = self.labels[node_layers[-1]]
+
+        # change format
         features = torch.FloatTensor(features)
         labels = torch.LongTensor(labels)
 
@@ -162,15 +188,24 @@ class Cora(Dataset):
         """
         _list, _set = list, set
         rows = self.adj.rows
+
         if type(idx) is int:
             node_layers = [np.array([idx], dtype=np.int64)]
         elif type(idx) is list:
             node_layers = [np.array(idx, dtype=np.int64)]
+
+        # num_layers equals the k-hop neighbors
+        # lines 2 to 7 of algorithm 2 in Hamilton, Ying, and Leskovec (2018)
         for _ in range(self.num_layers):
+            # get nodes in previous layer (prev)
             prev = node_layers[-1]
             arr = [node for node in prev]
+
+            # get neighbors of nodes in previous layer (prev -> arr)
             arr.extend([v for node in arr for v in rows[node]])
             arr = np.array(_list(_set(arr)), dtype=np.int64)
+
+            # add nodes to node_layers
             node_layers.append(arr)
         node_layers.reverse()
 

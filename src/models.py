@@ -78,24 +78,31 @@ class GraphSAGE(nn.Module):
         """
         out = features
         for k in range(self.num_layers):
+
+            # define nodes in the k-th hop of the computational graph to be processed
             nodes = node_layers[k+1]
+
+            # define mappings from node ids to node indices in the k-th hop of the computational graph
             mapping = mappings[k]
             init_mapped_nodes = np.array([mappings[0][v] for v in nodes], dtype=np.int64)
+
+            # get adjacency matrix rows associated with the nodes in the k-th hop of the computational graph
             cur_rows = rows[init_mapped_nodes]
 
-            # aggregate - line 11 of Algorithm 2 in the paper
-            aggregate = self.aggregators[k](out,
-                                            nodes,
-                                            mapping,
-                                            cur_rows,
-                                            self.num_samples)
+            # aggregate - line 11 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)
+            aggregate = self.aggregators[k](out, # source tensor
+                                            nodes, # indices of elements to aggregate in source tensor
+                                            mapping, # sorted mapping of nodes to indices
+                                            cur_rows, # QUESTION: what is this?
+                                            self.num_samples # dimension in which to aggregate
+                                            )
             cur_mapped_nodes = np.array([mapping[v] for v in nodes], dtype=np.int64)
 
-            # concat - line 12 of Algorithm 2 in the paper
+            # concat - line 12 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)
             out = torch.cat((out[cur_mapped_nodes, :], aggregate), dim=1)
             out = self.fcs[k](out)
 
-            # normalize - line 13 of Algorithm 2 in the paper
+            # normalize - line 13 of Algorithm 2 in Hamilton, Ying, and Leskovec (2017)
             if k+1 < self.num_layers:
                 out = self.relu(out)
                 out = self.bns[k](out)

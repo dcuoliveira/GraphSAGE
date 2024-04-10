@@ -29,8 +29,13 @@ def main():
                     config['normalize_adj'],
                     config['transductive'])
     dataset = utils.get_dataset(dataset_args)
-    loader = DataLoader(dataset=dataset, batch_size=config['batch_size'],
-                        shuffle=True, collate_fn=dataset.collate_wrapper)
+    
+    info = next(iter(dataset))
+
+    loader = DataLoader(dataset=dataset,
+                        batch_size=config['batch_size'],
+                        shuffle=True,
+                        collate_fn=dataset.collate_wrapper)
     input_dim, output_dim = dataset.get_dims()
 
     agg_class = utils.get_agg_class(config['agg_class'])
@@ -61,7 +66,10 @@ def main():
                 features, node_layers, mappings, rows, labels = batch
                 features, labels = features.to(device), labels.to(device)
                 optimizer.zero_grad()
-                out = model(features, node_layers, mappings, rows)
+                out = model.forward(features=features,
+                                    node_layers=node_layers,
+                                    mappings=mappings,
+                                    rows=rows)
                 loss = criterion(out, labels)
                 loss.backward()
                 optimizer.step()
@@ -117,7 +125,7 @@ def main():
     for (idx, batch) in enumerate(loader):
         features, node_layers, mappings, rows, labels = batch
         features, labels = features.to(device), labels.to(device)
-        out = model(features, node_layers, mappings, rows)
+        out = model.forward(features, node_layers, mappings, rows)
         loss = criterion(out, labels)
         running_loss += loss.item()
         total_loss += loss.item()
